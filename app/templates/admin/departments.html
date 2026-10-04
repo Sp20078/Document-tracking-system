@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Departments — Document Tracking System{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4"><i class="bi bi-building me-2"></i>Departments</h1>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white fw-semibold">All departments</div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr><th>Code</th><th>Name</th><th>Head</th><th>Members</th><th class="text-end">Assign head</th></tr>
+          </thead>
+          <tbody>
+          {% for d in departments %}
+          <tr>
+            <td><span class="badge bg-dark">{{ d.code }}</span></td>
+            <td class="fw-semibold">{{ d.name }}</td>
+            <td>{{ d.head_name or '—' }}</td>
+            <td>{{ d.member_count }}</td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#head-{{ d.department_id }}">
+                <i class="bi bi-person-badge"></i>
+              </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center text-muted py-5">No departments yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 card-title">Create department</h2>
+        <form method="post" action="{{ url_for('admin.create_department') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-2">
+            <label class="form-label small" for="nd-name">Name</label>
+            <input class="form-control form-control-sm" id="nd-name" name="name" required maxlength="100">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="nd-code">Code (2–10 chars)</label>
+            <input class="form-control form-control-sm" id="nd-code" name="code" required maxlength="10" minlength="2">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small" for="nd-head">Department head (optional)</label>
+            <select class="form-select form-select-sm" id="nd-head" name="head_user_id">
+              <option value="">None</option>
+              {% for h in heads %}
+              <option value="{{ h.user_id }}">{{ h.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm w-100" type="submit">Create department</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% for d in departments %}
+<div class="modal fade" id="head-{{ d.department_id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('admin.set_head', department_id=d.department_id) }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Head of {{ d.name }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <select class="form-select form-select-sm" name="head_user_id" required>
+            <option value="">Choose a user…</option>
+            {% for h in heads %}
+            <option value="{{ h.user_id }}" {% if d.head_name == h.full_name %}selected{% endif %}>{{ h.full_name }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-text small mt-2">Heads can approve and reject their department's documents.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

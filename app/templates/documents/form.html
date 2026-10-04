@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit document' if doc else 'New document' }} — Document Tracking System{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">
+  {% if doc %}<i class="bi bi-pencil-square me-2"></i>Edit document{% else %}<i class="bi bi-plus-lg me-2"></i>New document{% endif %}
+</h1>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data"
+              action="{{ url_for('documents.edit', document_id=doc.document_id) if doc and doc.get('document_id') else url_for('documents.create') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-3">
+            <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="title" name="title" required minlength="3" maxlength="200"
+                   value="{{ doc.title if doc and doc.title is string else '' }}">
+            <div class="form-text">3–200 characters.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="4">{{ doc.description if doc and doc.description is string else '' }}</textarea>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="document_type_id" class="form-label">Document type <span class="text-danger">*</span></label>
+              <select class="form-select" id="document_type_id" name="document_type_id" {% if doc %}disabled{% else %}required{% endif %}>
+                <option value="">Choose…</option>
+                {% for t in options.types %}
+                <option value="{{ t.document_type_id }}"
+                  {% if doc and doc.get('document_type_id') == t.document_type_id %}selected{% endif %}>{{ t.name }}</option>
+                {% endfor %}
+              </select>
+              {% if doc %}<div class="form-text">Type cannot be changed after creation.</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="department_id" class="form-label">Department <span class="text-danger">*</span></label>
+              <select class="form-select" id="department_id" name="department_id" {% if doc %}disabled{% else %}required{% endif %}>
+                <option value="">Choose…</option>
+                {% for d in options.departments %}
+                <option value="{{ d.department_id }}"
+                  {% if doc and doc.get('department_id') == d.department_id %}selected{% endif %}>{{ d.name }}</option>
+                {% endfor %}
+              </select>
+              {% if doc %}<div class="form-text">Department cannot be changed after creation.</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="priority" class="form-label">Priority</label>
+              <select class="form-select" id="priority" name="priority">
+                {% for p in options.priorities %}
+                <option value="{{ p }}"
+                  {% if (doc.priority if doc else 'NORMAL') == p %}selected{% endif %}>{{ priority_label(p) }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="attachment" class="form-label">Attachment</label>
+              <input type="file" class="form-control" id="attachment" name="attachment"
+                     accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt,.csv">
+              <div class="form-text">PDF, Office, image or text — max 10 MB.</div>
+              {% if doc and doc.get('file_original_name') %}
+              <div class="form-text">
+                Current file: {{ doc.file_original_name }}
+                <a href="{{ url_for('documents.download', document_id=doc.document_id) }}">(download)</a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              {{ 'Save changes' if doc else 'Create document' }}
+            </button>
+            <a class="btn btn-outline-secondary"
+               href="{{ url_for('documents.detail', document_id=doc.document_id) if doc and doc.get('document_id') else url_for('documents.index') }}">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

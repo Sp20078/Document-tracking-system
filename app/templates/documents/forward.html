@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Forward {{ doc.title }} — Document Tracking System{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1"><i class="bi bi-send me-2"></i>Forward document</h1>
+<p class="text-muted">Route <strong>{{ doc.title }}</strong> to a colleague or another department.
+  The recipient, timestamp and remarks are recorded in the document history.</p>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-3">
+            <label for="to_user_id" class="form-label">Forward to user <span class="text-danger">*</span></label>
+            <select class="form-select" id="to_user_id" name="to_user_id" required>
+              <option value="">Choose a user…</option>
+              {% for u in users %}
+              <option value="{{ u.user_id }}">{{ u.full_name }}{% if u.department %} — {{ u.department }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="to_department_id" class="form-label">Change owning department (optional)</label>
+            <select class="form-select" id="to_department_id" name="to_department_id">
+              <option value="">Keep current ({{ doc.department_name }})</option>
+              {% for d in departments %}
+              <option value="{{ d.department_id }}">{{ d.name }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Moves the document to another department's queue.</div>
+          </div>
+          <div class="mb-3">
+            <label for="remarks" class="form-label">Remarks</label>
+            <textarea class="form-control" id="remarks" name="remarks" rows="3" maxlength="500"
+                      placeholder="Why are you forwarding this document?"></textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-send me-1"></i>Forward</button>
+            <a class="btn btn-outline-secondary" href="{{ url_for('documents.detail', document_id=doc.document_id) }}">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

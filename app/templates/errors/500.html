@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}500 — Server error{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+  <h1 class="display-1 fw-bold text-danger">500</h1>
+  <p class="lead">Something went wrong on our side.</p>
+  <p class="text-muted">The error has been logged. No sensitive details are shown here.</p>
+  <a class="btn btn-primary" href="{{ url_for('dashboard.index') if current_user.user_id else url_for('auth.login') }}">
+    <i class="bi bi-house me-1"></i>Back to home</a>
+</div>
+{% endblock %}

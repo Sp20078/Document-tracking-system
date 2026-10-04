@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Notifications — Document Tracking System{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <h1 class="h3 mb-0"><i class="bi bi-bell me-2"></i>Notifications</h1>
+  {% if unread %}
+  <form method="post" action="{{ url_for('notifications.mark_all_read') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-outline-primary btn-sm"><i class="bi bi-check2-all me-1"></i>Mark all as read ({{ unread }})</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="card shadow-sm">
+  <div class="list-group list-group-flush">
+    {% for n in notifications %}
+    <div class="list-group-item {% if not n.is_read %}bg-light{% endif %} d-flex justify-content-between align-items-start gap-3">
+      <div class="flex-grow-1">
+        <div class="fw-semibold">
+          {% if not n.is_read %}<span class="badge bg-primary me-1">new</span>{% endif %}
+          {{ n.title }}
+        </div>
+        <div class="small">{{ n.message }}</div>
+        <div class="small text-muted">{{ n.created_at|timeago }}</div>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        {% if n.link %}<a class="btn btn-sm btn-outline-secondary" href="{{ n.link }}">Open</a>{% endif %}
+        {% if not n.is_read %}
+        <form method="post" action="{{ url_for('notifications.mark_read', notification_id=n.notification_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-outline-primary" title="Mark as read"><i class="bi bi-check2"></i></button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="list-group-item text-center text-muted py-5">
+      <i class="bi bi-bell-slash fs-1 d-block mb-2"></i>
+      No notifications yet. You will see document updates here.
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

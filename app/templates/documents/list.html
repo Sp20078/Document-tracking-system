@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Documents — Document Tracking System{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <h1 class="h3 mb-0"><i class="bi bi-file-earmark-text me-2"></i>Documents</h1>
+  <a class="btn btn-primary" href="{{ url_for('documents.create') }}"><i class="bi bi-plus-lg me-1"></i>New document</a>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small" for="q">Search title / description</label>
+        <input type="search" class="form-control" id="q" name="q" value="{{ filters.q or '' }}" placeholder="e.g. budget">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small" for="type_id">Type</label>
+        <select class="form-select" id="type_id" name="type_id">
+          <option value="">All types</option>
+          {% for t in options.types %}
+          <option value="{{ t.document_type_id }}" {% if filters.type_id == t.document_type_id %}selected{% endif %}>{{ t.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small" for="dept_id">Department</label>
+        <select class="form-select" id="dept_id" name="dept_id">
+          <option value="">All departments</option>
+          {% for d in options.departments %}
+          <option value="{{ d.department_id }}" {% if filters.dept_id == d.department_id %}selected{% endif %}>{{ d.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small" for="status">Status</label>
+        <select class="form-select" id="status" name="status">
+          <option value="">Any status</option>
+          {% for s in options.statuses %}
+          <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ status_label(s) }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small" for="priority">Priority</label>
+        <select class="form-select" id="priority" name="priority">
+          <option value="">Any priority</option>
+          {% for p in options.priorities %}
+          <option value="{{ p }}" {% if filters.priority == p %}selected{% endif %}>{{ priority_label(p) }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small" for="date_from">From</label>
+        <input type="date" class="form-control" id="date_from" name="date_from" value="{{ filters.date_from or '' }}">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small" for="date_to">To</label>
+        <input type="date" class="form-control" id="date_to" name="date_to" value="{{ filters.date_to or '' }}">
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="mine" name="mine" value="1" {% if filters.mine %}checked{% endif %}>
+          <label class="form-check-label small" for="mine">Created by me</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="assigned" name="assigned" value="1" {% if filters.assigned %}checked{% endif %}>
+          <label class="form-check-label small" for="assigned">Assigned to me</label>
+        </div>
+      </div>
+      <div class="col-6 col-md-2 d-flex gap-2">
+        <button class="btn btn-primary flex-fill" type="submit"><i class="bi bi-search me-1"></i>Filter</button>
+        <a class="btn btn-outline-secondary" href="{{ url_for('documents.index') }}" title="Clear filters"><i class="bi bi-x-lg"></i></a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <span class="fw-semibold">{{ meta.total }} document{{ '' if meta.total == 1 else 's' }}</span>
+    <span class="text-muted small">page {{ meta.page }} of {{ meta.pages }}</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Title</th><th>Type</th><th>Department</th><th>Created by</th>
+          <th>Holder</th><th>Status</th><th>Priority</th><th>Created</th><th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for d in docs %}
+        <tr>
+          <td class="fw-semibold">
+            {% if d.file_original_name %}<i class="bi bi-paperclip me-1 text-muted" title="Has attachment"></i>{% endif %}
+            <a href="{{ url_for('documents.detail', document_id=d.document_id) }}">{{ d.title }}</a>
+          </td>
+          <td>{{ d.document_type }}</td>
+          <td>{{ d.department_name }}</td>
+          <td>{{ d.created_by_name }}</td>
+          <td>{{ d.assigned_to_name or '—' }}</td>
+          <td><span class="badge badge-status-{{ d.status|lower }}">{{ status_label(d.status) }}</span></td>
+          <td><span class="badge badge-priority-{{ d.priority|lower }}">{{ priority_label(d.priority) }}</span></td>
+          <td class="text-nowrap">{{ d.created_at|dtformat('%Y-%m-%d') }}</td>
+          <td class="text-end text-nowrap">
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('documents.detail', document_id=d.document_id) }}"><i class="bi bi-eye"></i></a>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="9" class="text-center text-muted py-5">
+          <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+          No documents match your filters. Try clearing them or create a new document.
+        </td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if meta.pages > 1 %}
+  <div class="card-footer bg-white">
+    <nav aria-label="Documents pagination">
+      <ul class="pagination pagination-sm mb-0 justify-content-center">
+        <li class="page-item {% if not meta.has_prev %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('documents.index', page=meta.prev_num, **request.args) if meta.has_prev else '#' }}">&laquo;</a>
+        </li>
+        {% for p in range(1, meta.pages + 1) %}
+        <li class="page-item {% if p == meta.page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('documents.index', page=p, **request.args) }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li class="page-item {% if not meta.has_next %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('documents.index', page=meta.next_num, **request.args) if meta.has_next else '#' }}">&raquo;</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

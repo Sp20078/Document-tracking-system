@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Document Tracking System{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <h1 class="h3 mb-0"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h1>
+  <a class="btn btn-primary" href="{{ url_for('documents.create') }}">
+    <i class="bi bi-plus-lg me-1"></i>New document
+  </a>
+</div>
+
+<div class="row g-3 mb-4">
+  {% set cards = [
+    ('total', 'Total documents', 'bi-folder2', 'secondary'),
+    ('pending', 'Awaiting approval', 'bi-hourglass-split', 'warning'),
+    ('approved', 'Approved', 'bi-check2-circle', 'success'),
+    ('rejected', 'Rejected', 'bi-x-circle', 'danger'),
+    ('mine', 'Created by me', 'bi-person', 'primary'),
+    ('my_open', 'My open documents', 'bi-inboxes', 'info'),
+  ] %}
+  {% for key, label, icon, color in cards %}
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="card shadow-sm h-100 border-start border-4 border-{{ color }}">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="display-6 fw-semibold">{{ stats[key] }}</div>
+            <div class="text-muted small">{{ label }}</div>
+          </div>
+          <i class="bi {{ icon }} fs-2 text-{{ color }} opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-check2-square me-2"></i>Pending approvals for me</span>
+        <a class="small" href="{{ url_for('approvals.queue') }}">View all</a>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for a in my_approvals %}
+        <a class="list-group-item list-group-item-action" href="{{ url_for('documents.detail', document_id=a.document_id) }}">
+          <div class="d-flex justify-content-between">
+            <span class="fw-semibold">{{ a.document_title }}</span>
+            <span class="badge bg-warning text-dark">{{ a.hours_waiting }}h waiting</span>
+          </div>
+          <small class="text-muted">from {{ a.created_by_name }} · {{ a.department_name }} ·
+            <span class="badge bg-light text-dark border">{{ status_label(a.document_status) }}</span></small>
+        </a>
+        {% else %}
+        <div class="list-group-item text-center text-muted py-5">
+          <i class="bi bi-emoji-smile fs-1 d-block mb-2"></i>
+          No pending approvals — you are all caught up.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white fw-semibold"><i class="bi bi-activity me-2"></i>Recent document activity</div>
+      <ul class="list-group list-group-flush">
+        {% for e in recent_audit %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>
+            <span class="badge bg-dark me-2">{{ e.action }}</span>
+            {% if e.title %}<a href="{{ url_for('documents.detail', document_id=e.document_id) }}">{{ e.title }}</a>{% else %}{{ e.details or '' }}{% endif %}
+            <small class="text-muted d-block">{{ e.actor or 'system' }}</small>
+          </span>
+          <small class="text-muted text-nowrap">{{ e.created_at|timeago }}</small>
+        </li>
+        {% else %}
+        <li class="list-group-item text-center text-muted py-5">
+          <i class="bi bi-inbox fs-1 d-block mb-2"></i>No activity yet — create a document to get started.
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white fw-semibold"><i class="bi bi-clock-history me-2"></i>Latest documents</div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light"><tr><th>Title</th><th>Type</th><th>Status</th><th>Created</th></tr></thead>
+          <tbody>
+          {% for d in recent_docs %}
+            <tr>
+              <td><a href="{{ url_for('documents.detail', document_id=d.document_id) }}">{{ d.title }}</a></td>
+              <td>{{ d.document_type }}</td>
+              <td><span class="badge bg-light text-dark border">{{ status_label(d.status) }}</span></td>
+              <td class="text-nowrap">{{ d.created_at|dtformat('%Y-%m-%d') }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-5">No documents yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white fw-semibold"><i class="bi bi-building me-2"></i>Documents by department</div>
+      <ul class="list-group list-group-flush">
+        {% for row in dept_breakdown %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          {{ row.name }}
+          <span class="badge bg-secondary">{{ row.total }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

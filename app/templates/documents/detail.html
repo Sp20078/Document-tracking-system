@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }} — Document Tracking System{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div>
+    <h1 class="h3 mb-1">{{ doc.title }}</h1>
+    <div class="text-muted small">
+      {{ doc.document_type }} · {{ doc.department_name }} ·
+      created by {{ doc.created_by_name }} on {{ doc.created_at|dtformat }}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <span class="badge badge-status-{{ doc.status|lower }} align-self-center fs-6">{{ status_label(doc.status) }}</span>
+    <span class="badge badge-priority-{{ doc.priority|lower }} align-self-center fs-6">{{ priority_label(doc.priority) }}</span>
+  </div>
+</div>
+
+<div class="row g-4">
+  {# ------------------------------ main column ------------------------------ #}
+  <div class="col-lg-8">
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h2 class="h5 card-title">Details</h2>
+        <p class="mb-3">{{ doc.description or 'No description provided.' }}</p>
+        <dl class="row small mb-0">
+          <dt class="col-sm-4">Current holder</dt>
+          <dd class="col-sm-8">{{ doc.assigned_to_name or '—' }}</dd>
+          <dt class="col-sm-4">Attachment</dt>
+          <dd class="col-sm-8">
+            {% if doc.file_original_name %}
+              <a href="{{ url_for('documents.download', document_id=doc.document_id) }}">
+                <i class="bi bi-download me-1"></i>{{ doc.file_original_name }}</a>
+            {% else %}—{% endif %}
+          </dd>
+        </dl>
+        {% if can_edit %}
+        <div class="mt-3 d-flex gap-2">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('documents.edit', document_id=doc.document_id) }}">
+            <i class="bi bi-pencil me-1"></i>Edit</a>
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('documents.forward', document_id=doc.document_id) }}">
+            <i class="bi bi-send me-1"></i>Forward</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ---------------------------- approval panel ---------------------------- #}
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white fw-semibold"><i class="bi bi-check2-square me-2"></i>Approvals</div>
+      <div class="card-body">
+        {% set uid = current_user.user_id %}
+        {% set can_decide = current_user.role_name == 'Administrator'
+                            or doc.head_user_id == uid
+                            or doc.assigned_to == uid %}
+        {% if can_decide and doc.status in ('PENDING', 'UNDER_REVIEW', 'RETURNED') %}
+        <form method="post" action="{{ url_for('approvals.decide', document_id=doc.document_id) }}" class="row g-2 align-items-end"
+              data-confirm="Record this decision?">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="col-md-7">
+            <label for="remarks" class="form-label small">Remarks</label>
+            <input type="text" class="form-control" id="remarks" name="remarks" maxlength="500"
+                   placeholder="Optional for approve/return, required for reject">
+          </div>
+          <div class="col-md-5 d-flex gap-2">
+            <button class="btn btn-success" type="submit" name="decision" value="APPROVED"><i class="bi bi-check-lg me-1"></i>Approve</button>
+            <button class="btn btn-danger" type="submit" name="decision" value="REJECTED"><i class="bi bi-x-lg me-1"></i>Reject</button>
+            <button class="btn btn-warning" type="submit" name="decision" value="RETURNED"><i class="bi bi-arrow-counterclockwise me-1"></i>Return</button>
+          </div>
+        </form>
+        {% else %}
+        <p class="text-muted small mb-0">
+          {% if doc.status in ('APPROVED', 'REJECTED') %}This document has reached a final decision.
+          {% elif doc.status == 'DRAFT' %}This document is still a draft — submit it for review first.
+          {% else %}You are not authorized to decide this document.{% endif %}
+        </p>
+        {% endif %}
+
+        <hr>
+        {% if approvals %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light"><tr><th>Reviewer</th><th>Decision</th><th>Remarks</th><th>Decided</th></tr></thead>
+            <tbody>
+            {% for a in approvals %}
+              <tr>
+                <td>{{ a.reviewer_name }}</td>
+                <td><span class="badge badge-status-{{ a.decision|lower }}">{{ a.decision }}</span></td>
+                <td>{{ a.remarks or '—' }}</td>
+                <td class="text-nowrap">{{ a.decided_at|dtformat if a.decided_at else '—' }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0">No approval records yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ------------------------------ comments -------------------------------- #}
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white fw-semibold"><i class="bi bi-chat-dots me-2"></i>Comments</div>
+      <div class="card-body">
+        {% if comments %}
+        <ul class="list-unstyled mb-3">
+          {% for c in comments %}
+          <li class="d-flex mb-3">
+            <div class="flex-shrink-0"><i class="bi bi-person-circle fs-4 text-secondary"></i></div>
+            <div class="flex-grow-1 ms-3">
+              <div class="small"><span class="fw-semibold">{{ c.author }}</span>
+                <span class="text-muted">· {{ c.created_at|timeago }}</span></div>
+              <div>{{ c.body }}</div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted small">No comments yet.</p>
+        {% endif %}
+        <form method="post" action="{{ url_for('documents.comment', document_id=doc.document_id) }}" class="row g-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="col">
+            <input type="text" class="form-control" name="body" maxlength="2000" placeholder="Write a comment…" required>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-primary" type="submit">Comment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# ------------------------------ side column ------------------------------ #}
+  <div class="col-lg-4">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white fw-semibold"><i class="bi bi-clock-history me-2"></i>History timeline</div>
+      <div class="card-body">
+        <ul class="timeline list-unstyled mb-0">
+          {% for t in timeline %}
+          <li class="pb-3 mb-2 border-bottom">
+            <span class="badge bg-dark me-1">{{ t.action }}</span>
+            <small class="text-muted d-block mb-1">{{ t.created_at|dtformat }}</small>
+            <div class="small">
+              {{ t.from_user or 'system' }}
+              {% if t.to_user %} → <span class="fw-semibold">{{ t.to_user }}</span>{% endif %}
+              {% if t.to_department %} → <span class="fw-semibold">{{ t.to_department }}</span>{% endif %}
+            </div>
+            {% if t.remarks %}<div class="small text-muted">{{ t.remarks }}</div>{% endif %}
+          </li>
+          {% else %}
+          <li class="text-muted small">No transactions recorded.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header bg-white fw-semibold"><i class="bi bi-shield-check me-2"></i>Audit trail</div>
+      <ul class="list-group list-group-flush">
+        {% for a in audit %}
+        <li class="list-group-item small">
+          <span class="badge bg-secondary me-1">{{ a.action }}</span>
+          <span class="text-muted">{{ a.created_at|dtformat }}</span>
+          {% if a.old_value or a.new_value %}
+          <div>{{ a.old_value or '—' }} → {{ a.new_value or '—' }}</div>
+          {% endif %}
+          {% if a.details %}<div class="text-muted">{{ a.details }}</div>{% endif %}
+          <div class="text-muted">by {{ a.actor or 'system' }}</div>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted small">No audit entries.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

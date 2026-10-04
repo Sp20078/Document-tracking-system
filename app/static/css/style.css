@@ -1,0 +1,58 @@
+/* Document Tracking System — custom styles on top of Bootstrap 5 */
+
+body {
+  background-color: #f5f7fb;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+main { flex: 1 0 auto; }
+
+/* --- status badges -------------------------------------------------------- */
+.badge-status-draft        { background-color: #6c757d; }
+.badge-status-pending      { background-color: #ffc107; color: #212529; }
+.badge-status-under_review { background-color: #0dcaf0; color: #053840; }
+.badge-status-approved     { background-color: #198754; }
+.badge-status-rejected     { background-color: #dc3545; }
+.badge-status-returned     { background-color: #fd7e14; }
+
+/* --- priority badges ------------------------------------------------------ */
+.badge-priority-low    { background-color: #e9ecef; color: #495057; }
+.badge-priority-normal { background-color: #cfe2ff; color: #084298; }
+.badge-priority-high   { background-color: #ffe69c; color: #664d03; }
+.badge-priority-urgent { background-color: #f8d7da; color: #842029; }
+
+/* --- dashboard cards ------------------------------------------------------ */
+.card { border: 0; }
+.card-header { background-color: #fff; }
+
+/* --- history timeline ------------------------------------------------------ */
+.timeline { position: relative; }
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 0.35rem;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  width: 2px;
+  background: #dee2e6;
+}
+.timeline > li { position: relative; padding-left: 1.4rem; }
+.timeline > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.45rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  background: #0d6efd;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, .25);
+}
+
+/* --- flash stack ----------------------------------------------------------- */
+.flash-stack .alert { margin-bottom: .5rem; }
+
+/* --- tables ----------------------------------------------------------------- */
+.table td, .table th { vertical-align: middle; }

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}User administration — Document Tracking System{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4"><i class="bi bi-people me-2"></i>User administration</h1>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white fw-semibold">All users</div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr><th>Username</th><th>Name</th><th>Role</th><th>Department</th><th>Active</th><th class="text-end">Edit</th></tr>
+          </thead>
+          <tbody>
+          {% for u in users %}
+          <tr>
+            <td class="fw-semibold">{{ u.username }}</td>
+            <td>{{ u.full_name }}<div class="small text-muted">{{ u.email }}</div></td>
+            <td>{{ u.role_name }}</td>
+            <td>{{ u.department_name or '—' }}</td>
+            <td>{% if u.is_active %}<span class="badge bg-success">active</span>{% else %}<span class="badge bg-secondary">disabled</span>{% endif %}</td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editUser-{{ u.user_id }}">
+                <i class="bi bi-pencil"></i>
+              </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center text-muted py-5">No users found.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 card-title">Create user</h2>
+        <form method="post" action="{{ url_for('admin.create_user') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-2">
+            <label class="form-label small" for="nu-username">Username</label>
+            <input class="form-control form-control-sm" id="nu-username" name="username" required pattern="[a-z0-9_.\-]{3,50}">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="nu-email">Email</label>
+            <input type="email" class="form-control form-control-sm" id="nu-email" name="email" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="nu-name">Full name</label>
+            <input class="form-control form-control-sm" id="nu-name" name="full_name" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="nu-password">Initial password</label>
+            <input type="password" class="form-control form-control-sm" id="nu-password" name="password" minlength="8" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="nu-role">Role</label>
+            <select class="form-select form-select-sm" id="nu-role" name="role_id" required>
+              {% for r in roles %}
+              <option value="{{ r.role_id }}">{{ r.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small" for="nu-dept">Department</label>
+            <select class="form-select form-select-sm" id="nu-dept" name="department_id">
+              <option value="">None</option>
+              {% for d in departments %}
+              <option value="{{ d.department_id }}">{{ d.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm w-100" type="submit">Create user</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% for u in users %}
+<div class="modal fade" id="editUser-{{ u.user_id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('admin.edit_user', user_id=u.user_id) }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit {{ u.username }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-2">
+            <label class="form-label small">Full name</label>
+            <input class="form-control form-control-sm" name="full_name" value="{{ u.full_name }}" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Role</label>
+            <select class="form-select form-select-sm" name="role_id">
+              {% for r in roles %}
+              <option value="{{ r.role_id }}" {% if u.role_name == r.name %}selected{% endif %}>{{ r.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Department</label>
+            <select class="form-select form-select-sm" name="department_id">
+              <option value="">None</option>
+              {% for d in departments %}
+              <option value="{{ d.department_id }}" {% if u.department_name == d.name %}selected{% endif %}>{{ d.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-2 form-check">
+            <input class="form-check-input" type="checkbox" name="is_active" id="active-{{ u.user_id }}"
+                   {% if u.is_active %}checked{% endif %}>
+            <label class="form-check-label small" for="active-{{ u.user_id }}">Account active</label>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Reset password (optional)</label>
+            <input type="password" class="form-control form-control-sm" name="new_password" minlength="8"
+                   placeholder="Leave blank to keep current">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

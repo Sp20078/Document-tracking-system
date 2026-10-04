@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Approvals — Document Tracking System{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1"><i class="bi bi-check2-square me-2"></i>Approval queue</h1>
+<p class="text-muted">Pending approval tasks {{ scope }}.</p>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr><th>Document</th><th>Department</th><th>Requested by</th><th>Reviewer</th><th>Priority</th><th>Waiting</th><th class="text-end">Action</th></tr>
+      </thead>
+      <tbody>
+      {% for a in approvals %}
+        <tr>
+          <td class="fw-semibold"><a href="{{ url_for('documents.detail', document_id=a.document_id) }}">{{ a.document_title }}</a></td>
+          <td>{{ a.department_name }}</td>
+          <td>{{ a.created_by_name }}</td>
+          <td>{{ a.reviewer_name }}</td>
+          <td><span class="badge badge-priority-{{ a.document_priority|lower }}">{{ priority_label(a.document_priority) }}</span></td>
+          <td>
+            <span class="badge {% if a.hours_waiting >= 24 %}bg-danger{% elif a.hours_waiting >= 8 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+              {{ a.hours_waiting }}h
+            </span>
+          </td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('documents.detail', document_id=a.document_id) }}">
+              Review <i class="bi bi-arrow-right"></i></a>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-5">
+          <i class="bi bi-emoji-smile fs-1 d-block mb-2"></i>
+          The approval queue is empty.
+        </td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
